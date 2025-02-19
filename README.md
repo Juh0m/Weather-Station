@@ -1,2 +1,3 @@
 # Weather-Station
-asema
+Sääasemaprojektin arduinokoodi
+-Tulossa joskus-
