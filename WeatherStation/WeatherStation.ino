@@ -1,7 +1,7 @@
 #include <LiquidCrystal.h>
 #include <TimerOne.h>
 int lightSensorPin = A6;   // Pin for light sensor
-int pin2 = 2; // Only pins 2 and 3 usable for ISR TODO
+// int pin2 = 2; // Only pins 2 and 3 usable for ISR TODO
 // TODO: Change pin 2/3 as they are needed for ISR
 // RS pin = Arduino digital 2
 // Enable pin = Arduino digital 3
@@ -11,8 +11,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup() {
   Serial.begin(9600);
-  //pinMode(lightSensorPin, INPUT);
-  pinMode(pin2, INPUT);
+  //pinMode(pin2, INPUT);
   lcd.begin(20, 2);
   lcd.setCursor(0, 0);
   createFinCharacters();
