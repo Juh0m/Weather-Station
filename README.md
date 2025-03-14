@@ -1,4 +1,4 @@
-# Weather-Station
+# Weather Station
 Sääasemaprojektin arduinokoodi
 
 Tällä hetkellä analoginen (valoisuus) signaali toiminnassa, digitaalinen tekemättä.
