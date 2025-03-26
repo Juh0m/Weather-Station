@@ -98,6 +98,10 @@ void timerRoutine()
     lcd.print("TAAJUUS: ");  
     lcd.print(frequency, 2);  
     lcd.print(" Hz"); 
+
+    // If assumptions about signal are correct, this should work
+    float moisturePercentage = (8567 - frequency) * 60.0
+  }
 }
 
 void createFinCharacter()
