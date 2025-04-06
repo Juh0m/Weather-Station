@@ -12,7 +12,7 @@ int isrPin = 2; // Pin for ISR (Digital signal). Must be either pin 2 or 3 on a 
 const int rs = 3, en = 4, d4 = 8, d5 = 7, d6 = 6, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-void ISR();
+void ISR_E();
 void timer_routine();
 
 // For pin_ISR
@@ -36,7 +36,7 @@ void setup() {
   // Humidity can then be calculated using the formula:
   // RH = (0% RHf - frequency) * 60 -> (8.567 - f)*60
 
-  attachInterrupt(digitalPinToInterrupt(isrPin), ISR, FALLING); // Pin 2, Routine: pin_ISR, falling Edge
+  attachInterrupt(digitalPinToInterrupt(isrPin), ISR_E, FALLING); // Pin 2, Routine: pin_ISR, falling Edge
 
   // Timer for ISR
   // timerRoutine is called once every 1 second (1 000 000 uS).
@@ -66,14 +66,14 @@ void loop() {
   lcd.setCursor(0, 1);
   lcd.print("VALOISUUS: ");
   lcd.print(lightLevelPercentage);
-  lcd.print("%")
+  lcd.print("%");
 
-  // 300ms delay on loop() as updates to light level are not needed that often
-  // Could probably be increased to multiple seconds
-  delay(300);
+  // 600ms delay on loop() as updates to light level are not needed that often
+  // Could be increased to multiple seconds
+  delay(600);
 }
 
-void ISR() // Interrupt service routine
+void ISR_E() // Interrupt service routine
 {
   puls++;
 }
@@ -82,25 +82,25 @@ void timerRoutine()
   time++;
 
   // Every 5 seconds calculate frequency and reset time
-  if(time > 4)
+  if(time > 2)
   {
     time = 0;
-    frequency = (float)puls/5.0;
+    frequency = (float)puls/3.0;
 
     Serial.print(puls);
     puls = 0;
     Serial.println("<- puls");
     Serial.print(frequency);
-    Serial.println("<- taajuus");
+    Serial.println("<- taajuus"); 
 
+// If assumptions about signal are correct, this should work
+    float moisturePercentage = ((8567.0/1000.0) - (frequency/1000.0)) * 60.0;
     // Print on LCD (row 1)
     lcd.setCursor(0, 0);
-    lcd.print("TAAJUUS: ");  
-    lcd.print(frequency, 2);  
-    lcd.print(" Hz"); 
+    lcd.print("ILMANKOSTEUS: ");  
+    lcd.print(moisturePercentage, 2);  
+    lcd.print("%"); 
 
-    // If assumptions about signal are correct, this should work
-    float moisturePercentage = (8567 - frequency) * 60.0
   }
 }
 
