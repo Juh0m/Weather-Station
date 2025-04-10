@@ -1,7 +1,8 @@
 # Weather Station
 Sääasemaprojektin arduinokoodi
 
-Tällä hetkellä analoginen (valoisuus) signaali toiminnassa, digitaalinen tekemättä.
-Tulostaa LCD- näytölle valoisuuden määrän.
+Tällä hetkellä analogisen ja digitaalisen signaalin luku toiminnassa
 
-Tulevaisuudessa lähettää MQTTllä tiedot eteenpäin ja ne tulevat näkyviin nettisivulle.
+Tulostaa LCD- näytölle valoisuuden ja ilmankosteuden määrän.
+
+Tulevaisuudessa lähettää MQTTllä tiedot eteenpäin tietokantaan.
