@@ -1,8 +1,22 @@
 #include <Ethernet.h>
+#include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <PubSubClient.h>
 #include <TimerOne.h>
 
+// -- Keypad --
+const byte ROWS = 1; // One row
+const byte COLS = 4; // Three columns
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'}
+};
+
+byte rowPins[ROWS] = {A5}; // Arduino A4 pin for row
+byte colPins[COLS] = {A0, A1, A3, A4}; // Arduino pins A1, A2, A3, A4 for columns
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS ); 
+
+// -- MQTT --
 byte server[] = {10,6,0,23 }; // MQTT- server IP-address
 unsigned int port = 1883; // MQTT- server port
 EthernetClient ethClient;
@@ -11,10 +25,9 @@ void callback(char* topic, byte* payload, unsigned int length);
 PubSubClient client(server, port, callback, ethClient); 
 // A8 61 0A AE 59 C3
 static uint8_t macAddress[6] {0xA8, 0x61, 0x0A, 0xAE, 0x59, 0xC3}; 
-// Device ID 
+// Device ID, client ID and client secret for ethClient connection
 char* deviceId = "wysi727";
-// Client ID
-char* clientId = "a7272727w"; 
+char* clientId = "a7272727w";
 char* deviceSecret = "oq2if";
 
 // Topics
@@ -22,67 +35,109 @@ char* deviceSecret = "oq2if";
 #define outTopicLight "w727_valoisuus"
 #define outTopicMoisture "w727_kosteusIn"
 
-int lightSensorPin = A6;   // Pin for light sensor
-int isrPin = 2; // Pin for ISR (Digital signal). Must be either pin 2 or 3 on a nano.
+int lightSensorPin = A6; // Pin for light sensor (Analog signal)
+int isrPin = 2; // Pin for ISR (Digital signal).
 
 // RS pin = Arduino digital 3
 // Enable pin = Arduino digital 4
 // d4-d7 = Arduino digital pins 5-8
-const int rs = 3, en = 4, d4 = 8, d5 = 7, d6 = 6, d7 = 5;
+const int rs = 3, en = 4, d4 = 5, d5 = 6, d6 = 7, d7 = 8;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-
-
+// Function prototypes
+void ShowIP();
+void ShowSignals();
+void ShowSignalMinMax();
 void ISR_D();
 void timer_routine();
 void fetchIP();
 void connectMQTTServer();
 
-// For pin_ISR
+// For ISR
 int puls = 0;
 // Digital signal frequency
 float frequency;
+// Measurements in percentage
+int lightLevelPercentage;
+int moisturePercentage;
+
+// Min percentages set to above 100% to guarantee the min value is actually the lowest read value
+int minMoisturePercentage = 727;
+int maxMoisturePercentage = 0;
+int minLightLevelPercentage = 727;
+int maxLightLevelPercentage = 0;
+
+// Current min/max selection on LCD
+String current = "max";
+
+// 10 second averages
 float moisture10s;
 float lightLevel10s;
 // For timer_routine
+// Time2 is for 10s average
 volatile byte time = 0;
 volatile byte time2 = 0;
+
 
 void setup() {
   // ISR pin
   pinMode(isrPin, INPUT);
   // Interrupt Service Routine for digital signal
-  // Every time the signal falls from 5V to 0V pin_ISR is called and puls increments by one.
-  // Every 5 seconds the frequency of the signal is calculated from puls.
+  // Every time the signal falls from 5V to 0V ISR_D is called and puls increments by one.
+  // Every 2 seconds the frequency of the signal is calculated from puls.
   // According to project requirements, relative humidity of 40% is 7.9kHz and relative humidity of 100% is 6.9kHz
-
   // A 1% increase in humidity corresponds to a (-1/60*100)kHz decrease in frequency.
   // 0% humidity would then be 8.567kHz (8.56666...)
   // Humidity can then be calculated using the formula:
   // RH = (0% RHf - frequency) * 60 -> (8567Hz - f)*60
 
-  attachInterrupt(digitalPinToInterrupt(isrPin), ISR_D, FALLING); // Pin 2, Routine: pin_ISR, falling Edge
+  attachInterrupt(digitalPinToInterrupt(isrPin), ISR_D, FALLING); // Pin 2, Routine: ISR_D, falling Edge
 
   // Timer for ISR
   // timerRoutine is called once every 1 second (1 000 000 uS).
   Timer1.initialize(1000000);
   Timer1.attachInterrupt(timerRoutine);
 
-  // Begin serial data transmission at 9600 baud (for printing values to the serial monitor)
   Serial.begin(9600);
-  // LCD begin, 20 positions, 2 rows (TODO: is 2 rows the max?)
-  // Set cursor at first position
+  // LCD begin, 20 positions, 2 rows
+  // Set cursor to first position
   lcd.begin(20, 2);
   lcd.setCursor(0, 0);
+  // Prints a message on the LCD to indicate the code is running on the arduino
+  lcd.print("Arduino ready");
 
+  // Begin ethernet connection and fetch IP
   fetchIP();
+  // Connect to broker
   connectMQTTServer();
   // Letter Ä for LCD
   createFinCharacter();
 }
 
 void loop() {
-  // Nothing is done in the loop as everything is done with interrupts
+  // Pressed key on keypad
+  char key = keypad.getKey();
+  if (key){
+
+    if(key == '1')
+    {
+      ShowIP();
+    }
+    if(key == '2')
+    {
+      ShowSignalMinMax();
+    }
+    else if(key == '3')
+    {
+      ShowSignals();
+    }
+    else if(key == 'A')
+    {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("727");
+    }
+  }
 }
 
 void ISR_D() // Interrupt service routine
@@ -90,38 +145,115 @@ void ISR_D() // Interrupt service routine
   // Increment by one every time voltage falls
   puls++; 
 }
+void ShowIP()
+{
+  // Prints IP and connection status of the ethernet module on the LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("IP: ");
+  lcd.print(Ethernet.localIP());
+  lcd.setCursor(0, 1);
+  if(client.connected())
+  {
+    lcd.print("Connected to broker");
+  }
+  else
+  {
+    lcd.print("Not connected to broker");
+  }
+}
+void ShowSignals()
+{
+  // Prints the current signal values to the LCD
+  // Does not update until the key is pressed again
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Ilmankosteus: ");  
+  lcd.print(moisturePercentage, 1);  
+  lcd.print("%"); 
+
+  lcd.setCursor(0, 1);
+  lcd.print("Valoisuus: ");
+  lcd.print(lightLevelPercentage);
+  lcd.print("%");
+}
+void ShowSignalMinMax()
+{
+  if(current == "min")
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Kosteus MAX: ");
+    lcd.print(maxMoisturePercentage, 1);
+    lcd.print("%");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Valoisuus MAX: ");
+    lcd.print(maxLightLevelPercentage);
+    lcd.print("%");
+    current = "max";
+  }
+  else if(current == "max")
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Kosteus MIN: ");
+    lcd.print(minMoisturePercentage, 1);
+    lcd.print("%");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Valoisuus MIN: ");
+    lcd.print(minLightLevelPercentage);
+    lcd.print("%");
+    current = "min";
+  }
+
+}
 void timerRoutine()
 {
   time++;
-
   // Every 2 seconds calculate frequency and reset time
   if(time > 1)
   {
     time = 0;
-    frequency = (float)puls/2.0;
 
     // Light level
     float lightLevelVoltage = (analogRead(lightSensorPin) / 1024.0)*5.0; // 0-5V, 0V is 0% light level, 5V = 100% light level
-    int lightLevelPercentage = (lightLevelVoltage / 5)*100; 
-    lightLevel10s += lightLevelPercentage;
-    // Print on LCD (row 2)
-    lcd.setCursor(0, 1);
-    lcd.print("VALOISUUS: ");
-    lcd.print(lightLevelPercentage);
-    lcd.print("%");
-
+    lightLevelPercentage = (lightLevelVoltage / 5)*100; // Convert to percentage
+    lightLevel10s += lightLevelPercentage; // Add to 10s average
     puls = 0;
 
-    // Moisture (in)
-    float moisturePercentage = ((8567.0/1000.0) - (frequency/1000.0)) * 60.0;
-    moisture10s += moisturePercentage;
-    // Print on LCD (row 1)
-    lcd.setCursor(0, 0);
-    lcd.print("ILMANKOSTEUS: ");  
-    lcd.print(moisturePercentage, 1);  
-    lcd.print("%"); 
+    // Check if light level value was lower than minimum or higher than maximum
+    if(lightLevelPercentage > maxLightLevelPercentage)
+    {
+      maxLightLevelPercentage = lightLevelPercentage;
+    }
+    if(lightLevelPercentage < minLightLevelPercentage)
+    {
+      minLightLevelPercentage = lightLevelPercentage;
+    }
 
-    time2++;
+    // Moisture (in)
+    frequency = (float)puls/2.0; 
+    moisturePercentage = ((8567.0/1000.0) - (frequency/1000.0)) * 60.0; // Convert frequency to percentage
+  
+    moisture10s += moisturePercentage; // Add to 10s average
+
+    time2++; // Increment time2 by one
+
+ // Check if moisture value was lower than minimum or higher than maximum
+    if(moisturePercentage > maxMoisturePercentage)
+    {
+      // Moisture can't go above 100%
+      if(moisturePercentage <= 100)
+      {
+        maxMoisturePercentage = moisturePercentage;
+      }
+    }
+    if(moisturePercentage < minMoisturePercentage)
+    {
+      minMoisturePercentage = moisturePercentage;
+    }
   }
 
   // Every 10 seconds calculate average values of that time frame and send them to the broker
@@ -136,7 +268,6 @@ void timerRoutine()
     moisture10s = 0;
     lightLevel10s = 0;
   }
-
 }
 void connectMQTTServer()
 {
@@ -162,13 +293,15 @@ void sendMQTTMessage()
 
   // Does not work currently as the MQTT broker code is not working
   //sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}","S_name1", outTopicLight, "S_value1", lightLevel, "S_name2", outTopicMoisture, "S_value2", moisture);
-  
-  if (!client.connected()) { // Check connection to MQTT broker
-      connectMQTTServer(); // If not connected, connect
+  // Check connection to MQTT broker
+  if (!client.connected()) 
+  { 
+    connectMQTTServer(); // If not connected, connect
   }
   if (client.connected()) { // If connected
-      client.publish(outTopic, buffer); // Send message to broker
+
       sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\"}", "S_name", outTopicLight, "S_value", lightLevel);
+      client.publish(outTopic, buffer); // Send message to broker
       Serial.println(buffer);
       sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\"}", "S_name", outTopicMoisture, "S_value", moisture);
       client.publish(outTopic, buffer); // Send message to broker
