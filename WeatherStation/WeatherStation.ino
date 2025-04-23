@@ -48,7 +48,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void ShowIP();
 void ShowSignals();
 void ShowSignalMinMax();
-void ISR_D();
+void ISR_R();
 void timer_routine();
 void fetchIP();
 void connectMQTTServer();
@@ -83,7 +83,7 @@ void setup() {
   // ISR pin
   pinMode(isrPin, INPUT);
   // Interrupt Service Routine for digital signal
-  // Every time the signal falls from 5V to 0V ISR_D is called and puls increments by one.
+  // Every time the signal falls from 5V to 0V ISR_R is called and puls increments by one.
   // Every 2 seconds the frequency of the signal is calculated from puls.
   // According to project requirements, relative humidity of 40% is 7.9kHz and relative humidity of 100% is 6.9kHz
   // A 1% increase in humidity corresponds to a (-1/60*100)kHz decrease in frequency.
@@ -91,7 +91,7 @@ void setup() {
   // Humidity can then be calculated using the formula:
   // RH = (0% RHf - frequency) * 60 -> (8567Hz - f)*60
 
-  attachInterrupt(digitalPinToInterrupt(isrPin), ISR_D, FALLING); // Pin 2, Routine: ISR_D, falling Edge
+  attachInterrupt(digitalPinToInterrupt(isrPin), ISR_R, FALLING); // Pin 2, Routine: ISR_R, falling Edge
 
   // Timer for ISR
   // timerRoutine is called once every 1 second (1 000 000 uS).
@@ -140,7 +140,7 @@ void loop() {
   }
 }
 
-void ISR_D() // Interrupt service routine
+void ISR_R() // Interrupt service routine
 {
   // Increment by one every time voltage falls
   puls++; 
