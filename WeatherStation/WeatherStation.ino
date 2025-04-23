@@ -86,7 +86,7 @@ void setup() {
   // Every time the signal falls from 5V to 0V ISR_R is called and puls increments by one.
   // Every 2 seconds the frequency of the signal is calculated from puls.
   // According to project requirements, relative humidity of 40% is 7.9kHz and relative humidity of 100% is 6.9kHz
-  // A 1% increase in humidity corresponds to a (-1/60*100)kHz decrease in frequency.
+  // A 1% increase in humidity corresponds to a (-1/60)kHz decrease in frequency.
   // 0% humidity would then be 8.567kHz (8.56666...)
   // Humidity can then be calculated using the formula:
   // RH = (0% RHf - frequency) * 60 -> (8567Hz - f)*60
