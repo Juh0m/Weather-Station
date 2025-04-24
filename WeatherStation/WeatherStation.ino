@@ -41,6 +41,8 @@ int isrPin = 2; // Pin for ISR (Digital signal).
 // RS pin = Arduino digital 3
 // Enable pin = Arduino digital 4
 // d4-d7 = Arduino digital pins 5-8
+
+// -- LCD --
 const int rs = 3, en = 4, d4 = 5, d5 = 6, d6 = 7, d7 = 8;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
@@ -62,9 +64,9 @@ int lightLevelPercentage;
 int moisturePercentage;
 
 // Min percentages set to above 100% to guarantee the min value is actually the lowest read value
-int minMoisturePercentage = 727;
+int minMoisturePercentage = 100;
 int maxMoisturePercentage = 0;
-int minLightLevelPercentage = 727;
+int minLightLevelPercentage = 100;
 int maxLightLevelPercentage = 0;
 
 // Current min/max selection on LCD
@@ -290,7 +292,7 @@ void sendMQTTMessage()
   char buffer[100];
 
   // Does not work currently as the MQTT broker code is not working
-  //sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}","S_name1", outTopicLight, "S_value1", lightLevel, "S_name2", outTopicMoisture, "S_value2", moisture);
+  // sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}","S_name1", outTopicLight, "S_value1", lightLevel, "S_name2", outTopicMoisture, "S_value2", moisture);
   // Check connection to MQTT broker
   if (!client.connected()) 
   { 
