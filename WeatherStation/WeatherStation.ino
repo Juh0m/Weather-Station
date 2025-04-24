@@ -50,6 +50,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void ShowIP();
 void ShowSignals();
 void ShowSignalMinMax();
+void updateMinMax();
 void ISR_R();
 void timer_routine();
 void fetchIP();
@@ -230,7 +231,7 @@ void timerRoutine()
     {
       moisturePercentage = 100;
     }
-  
+    updateMinMax();
     moisture10s += moisturePercentage; // Add to 10s average
     time2++; // Increment time2 by one
   }
