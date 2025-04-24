@@ -47,14 +47,14 @@ const int rs = 3, en = 4, d4 = 5, d5 = 6, d6 = 7, d7 = 8;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 // Function prototypes
-void ShowIP();
-void ShowSignals();
-void ShowSignalMinMax();
-void updateMinMax();
-void ISR_R();
-void timer_routine();
-void fetchIP();
 void connectMQTTServer();
+void fetchIP();
+void ISR_R();
+void showIP();
+void showSignals();
+void showSignalMinMax();
+void timer_routine();
+void updateMinMax();
 
 // For ISR
 int puls = 0;
@@ -124,13 +124,13 @@ void loop() {
     switch(key)
     {
     case '1':
-      ShowIP();
+      showIP();
       break;
     case '2':
-      ShowSignalMinMax();
+      showSignalMinMax();
       break;
     case '3':
-      ShowSignals();
+      showSignals();
       break;
     case 'A':
       lcd.clear();
@@ -146,7 +146,7 @@ void ISR_R() // Interrupt service routine
   // Increment by one every time voltage falls
   puls++; 
 }
-void ShowIP()
+void showIP()
 {
   // Prints IP and connection status of the ethernet module on the LCD
   lcd.clear();
@@ -163,7 +163,7 @@ void ShowIP()
     lcd.print("Not connected to broker");
   }
 }
-void ShowSignals()
+void showSignals()
 {
   // Prints the current signal values to the LCD
   // Does not update until the key is pressed again
@@ -178,7 +178,7 @@ void ShowSignals()
   lcd.print(lightLevelPercentage);
   lcd.print("%");
 }
-void ShowSignalMinMax()
+void showSignalMinMax()
 {
   if(current == "min")
   {
