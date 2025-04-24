@@ -23,7 +23,7 @@ EthernetClient ethClient;
 void callback(char* topic, byte* payload, unsigned int length);
 
 PubSubClient client(server, port, callback, ethClient); 
-// A8 61 0A AE 59 C3
+// A8-61-0A-AE-59-C3 is the mac address of our ethernet module
 static uint8_t macAddress[6] {0xA8, 0x61, 0x0A, 0xAE, 0x59, 0xC3}; 
 // Device ID, client ID and client secret for ethClient connection
 char* deviceId = "wysi727";
