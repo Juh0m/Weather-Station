@@ -118,24 +118,22 @@ void loop() {
   // Pressed key on keypad
   char key = keypad.getKey();
   if (key){
-
-    if(key == '1')
+    switch(key)
     {
+    case '1':
       ShowIP();
-    }
-    if(key == '2')
-    {
+      break;
+    case '2':
       ShowSignalMinMax();
-    }
-    else if(key == '3')
-    {
+      break;
+    case '3':
       ShowSignals();
-    }
-    else if(key == 'A')
-    {
+      break;
+    case 'A':
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("727");
+      break;
     }
   }
 }
@@ -345,4 +343,3 @@ void createFinCharacter()
   };
   lcd.createChar(1, CapitalAwithDots);
 }
-
