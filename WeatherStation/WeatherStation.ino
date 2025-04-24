@@ -223,37 +223,16 @@ void timerRoutine()
     lightLevel10s += lightLevelPercentage; // Add to 10s average
     puls = 0;
 
-    // Check if light level value was lower than minimum or higher than maximum
-    if(lightLevelPercentage > maxLightLevelPercentage)
-    {
-      maxLightLevelPercentage = lightLevelPercentage;
-    }
-    if(lightLevelPercentage < minLightLevelPercentage)
-    {
-      minLightLevelPercentage = lightLevelPercentage;
-    }
-
     // Moisture (in)
     frequency = (float)puls/2.0; 
     moisturePercentage = ((8567.0/1000.0) - (frequency/1000.0)) * 60.0; // Convert frequency to percentage
+    if(moisturePercentage > 100)
+    {
+      moisturePercentage = 100;
+    }
   
     moisture10s += moisturePercentage; // Add to 10s average
-
     time2++; // Increment time2 by one
-
- // Check if moisture value was lower than minimum or higher than maximum
-    if(moisturePercentage > maxMoisturePercentage)
-    {
-      // Moisture can't go above 100%
-      if(moisturePercentage <= 100)
-      {
-        maxMoisturePercentage = moisturePercentage;
-      }
-    }
-    if(moisturePercentage < minMoisturePercentage)
-    {
-      minMoisturePercentage = moisturePercentage;
-    }
   }
 
   // Every 10 seconds calculate average values of that time frame and send them to the broker
@@ -329,7 +308,28 @@ void callback(char* topic, byte* payload, unsigned int length)
 {
   Serial.println(topic);
 }
+void updateMinMax()
+{
+    // Check if signal value was lower than minimum or higher than maximum
+    // The percentages will always be positive and under 100% so no need for additional checks
+    if(lightLevelPercentage > maxLightLevelPercentage)
+    {
+      maxLightLevelPercentage = lightLevelPercentage;
+    }
+    if(lightLevelPercentage < minLightLevelPercentage)
+    {
+      minLightLevelPercentage = lightLevelPercentage;
+    }
 
+    if(moisturePercentage > maxMoisturePercentage)
+    {
+      maxMoisturePercentage = moisturePercentage;
+    }
+    if(moisturePercentage < minMoisturePercentage)
+    {
+      minMoisturePercentage = moisturePercentage;
+    }
+}
 void createFinCharacter()
 {
   // Letter Ä
