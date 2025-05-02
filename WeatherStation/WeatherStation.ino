@@ -282,11 +282,9 @@ void sendMQTTMessage()
 
       sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\"}", "S_name", outTopicLight, "S_value", lightLevel);
       client.publish(outTopic, buffer); // Send message to broker
-      Serial.println(buffer);
       sprintf(buffer, "IOTJS={\"%s\":\"%s\",\"%s\":\"%s\"}", "S_name", outTopicMoisture, "S_value", moisture);
       client.publish(outTopic, buffer); // Send message to broker
       Serial.println("Messages sent to MQTT broker."); 
-      Serial.println(buffer);
   } else {
       Serial.println("Failed to send message: not connected to MQTT broker.");
   }
@@ -299,15 +297,11 @@ void fetchIP()
   {
     Serial.println("Failed to fetch IP");
   }
-  else
-  {
-    Serial.println(Ethernet.localIP());
-  }
 }
 // PSC Callback
 void callback(char* topic, byte* payload, unsigned int length)
 {
-  Serial.println(topic);
+  // Nothing is currently done here
 }
 void updateMinMax()
 {
